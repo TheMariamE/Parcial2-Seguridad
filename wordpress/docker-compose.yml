@@ -1,0 +1,77 @@
+version: '3.2'
+
+networks:
+  private:
+  public:
+    external:
+      name: traefik_webgateway
+      
+services:
+  wpdb:
+    image: mariadb
+    volumes:
+      - /home/themariame/Parcial2-Seguridad/wordpress/database:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 'grupo13'
+      MYSQL_DATABASE: wp_db
+      MYSQL_USER: grupomsj
+      MYSQL_PASSWORD: 'grupo13'
+    networks:
+      - private
+    labels:
+      - traefik.enable=false
+      
+  wordpress1:
+    depends_on:
+      - wpdb
+    image: wordpress
+    links:
+      - wpdb:mysql
+    environment:
+      WORDPRESS_DB_USER: grupomsj
+      WORDPRESS_DB_NAME: wp_db
+      WORDPRESS_DB_PASSWORD: 'grupo13'
+    volumes:
+      - '/home/themariame/Parcial2-Seguridad/wordpress/html:/var/www/html'
+    labels:
+      - traefik.backend=wordpress1
+      - traefik.docker.network=traefik_webgateway
+      - traefik.http.routers.wordpress1.rule=Host(`wordpress1.grupomsj-parcial2.localhost`)
+      - traefik.port=80
+    networks:
+      - private
+      - public
+ 
+  wordpress2:
+    depends_on:
+      - wpdb
+    image: wordpress
+    links:
+      - wpdb:mysql
+    environment:
+      WORDPRESS_DB_USER: grupomsj
+      WORDPRESS_DB_NAME: wp_db
+      WORDPRESS_DB_PASSWORD: 'grupo13'
+    volumes:
+      - '/home/themariame/Parcial2-Seguridad/wordpress/html:/var/www/html'
+    labels:
+      - traefik.backend=wordpress2
+      - traefik.docker.network=traefik_webgateway
+      - traefik.http.routers.wordpress2.rule=Host(`wordpress2.grupomsj-parcial2.localhost`)
+      - traefik.port=80
+    networks:
+      - private
+      - public
+ 
+  wpadminer:
+    depends_on:
+      - wpdb
+    image: adminer:4.7.7-standalone
+    labels:
+      - traefik.backend=wpadminer
+      - traefik.http.routers.wpadminer.rule=Host(`wpadminer.grupomsj-parcial2.localhost`)
+      - traefik.docker.network=traefik_webgateway
+      - traefik.port=8080
+    networks:
+      - private
+      - public

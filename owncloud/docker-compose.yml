@@ -1,0 +1,71 @@
+version: '3.2'
+volumes:
+  files:
+    driver: local
+  mysql:
+    driver: local
+  backup:
+    driver: local
+services:
+  owncloud:
+    image: owncloud/server:10.0
+    restart: unless-stopped
+    depends_on:
+      - ocdb
+    links:
+      - ocdb:db
+    environment:
+      - OWNCLOUD_DOMAIN=owncloud.grupomsj-parcial2.localhost
+      - OWNCLOUD_DB_TYPE=mysql
+      - OWNCLOUD_DB_NAME=owncloud
+      - OWNCLOUD_DB_USERNAME=grupomsj
+      - OWNCLOUD_DB_PASSWORD=grupo13
+      - OWNCLOUD_DB_HOST=db
+      - OWNCLOUD_ADMIN_USERNAME=admin
+      - OWNCLOUD_ADMIN_PASSWORD=grupo13
+      - OWNCLOUD_MYSQL_UTF8MB4=true
+    labels:
+      - traefik.enable=true
+      - traefik.backend=owncloud
+      - traefik.docker.network=traefik_webgateway
+      - traefik.http.routers.owncloud.rule=Host(`owncloud.grupomsj-parcial2.localhost`)
+      - traefik.port=80
+    networks:
+      - private
+      - public
+    healthcheck:
+      test: ["CMD", "/usr/bin/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - files:/mnt/data
+ 
+  ocdb:
+    image: webhippie/mariadb:latest
+    restart: unless-stopped
+    environment:
+      - MARIADB_ROOT_PASSWORD=grupo13
+      - MARIADB_USERNAME=grupomsj
+      - MARIADB_PASSWORD=grupo13
+      - MARIADB_DATABASE=owncloud
+      - MARIADB_MAX_ALLOWED_PACKET=128M
+      - MARIADB_INNODB_LOG_FILE_SIZE=64M
+    healthcheck:
+      test: ["CMD", "/usr/bin/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - mysql:/var/lib/mysql
+      - backup:/var/lib/backup
+    networks:
+      - private
+    labels:
+      - traefik.enable=false
+      
+networks:
+  private:
+  public:
+    external:
+      name: traefik_webgateway

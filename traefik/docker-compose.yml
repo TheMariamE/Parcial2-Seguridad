@@ -1,0 +1,24 @@
+version: '3.5'
+
+networks:
+  webgateway:
+    driver: bridge
+  
+services:
+ traefik:
+   image: traefik:v2.3
+   command: --api.insecure=true --providers.docker
+   networks:
+     - webgateway
+   ports:
+     - "80:80"
+     - "8082:8080"
+   volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+    
+ whoami:
+   image: containous/whoami
+   labels:
+      - "traefik.http.routers.whoami.rule=Host(`whoami.grupomsj-parcial2.localhost`)"
+   networks:
+    - webgateway
